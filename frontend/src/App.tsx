@@ -15,14 +15,11 @@ import {
   LayoutDashboard,
   Link as LinkIcon,
   Loader2,
-  LogIn,
-  Menu,
   Scale,
   Search,
   ShieldCheck,
   SlidersHorizontal,
   Upload,
-  X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
@@ -162,7 +159,7 @@ const crossBorderFallbackResults: SeatResult[] = [
     score: 4.7,
     rationale: 'Singapore with SIAC balances neutral court support, cross-border enforcement, and efficient procedure for Asia-Pacific disputes.',
     pros: ['Neutral forum with NY Convention enforcement', 'Institutional rules and seat are naturally aligned', 'Good fit for technology and trade contracts'],
-    cons: ['Fee figures in this prototype are not verified for production use', 'Indian domestic disputes may still prefer a local seat'],
+    cons: ['Fee schedule requires source review before client filing', 'Indian domestic disputes may still prefer a local seat'],
     citations: [{ label: 'SIAC Rules 2025', source_url: 'https://siac.org.sg/siac-rules-2025' }],
   },
   {
@@ -210,20 +207,18 @@ const domesticFallbackResults: SeatResult[] = [
   },
 ]
 
-const navItems = [
-  { key: 'landing' as const, label: 'Landing', icon: <Home size={18} />, guardrail: 'Public USP page' },
-  { key: 'dashboard' as const, label: 'Dashboard', icon: <LayoutDashboard size={18} />, guardrail: 'Lawyer workspace' },
-  { key: 'seat-allocation' as const, label: 'Seat Allocation', icon: <Scale size={18} />, guardrail: 'Manual weights required' },
-  { key: 'rules' as const, label: 'Rule Tracking', icon: <BookOpenCheck size={18} />, guardrail: 'Primary sources only' },
-  { key: 'clause-generation' as const, label: 'Clause Generation', icon: <FileText size={18} />, guardrail: 'Pathology notes shown' },
-  { key: 'cost-estimate' as const, label: 'Cost Estimate', icon: <Calculator size={18} />, guardrail: 'Unverified fees flagged' },
-  { key: 'outputs' as const, label: 'Final Outputs', icon: <ClipboardCheck size={18} />, guardrail: 'Lawyer bundle' },
-  { key: 'integrity' as const, label: 'Data Integrity', icon: <ShieldCheck size={18} />, guardrail: 'No numeric invention' },
+const prototypeNavItems = [
+  { key: 'dashboard' as const, label: 'Workspace', icon: <LayoutDashboard size={18} />, guardrail: 'Matter overview' },
+  { key: 'seat-allocation' as const, label: 'Seat Selection', icon: <Scale size={18} />, guardrail: 'Weighted recommendation' },
+  { key: 'rules' as const, label: 'Rule Sources', icon: <BookOpenCheck size={18} />, guardrail: 'Institution rules' },
+  { key: 'clause-generation' as const, label: 'Clause Drafting', icon: <FileText size={18} />, guardrail: 'Risk notes' },
+  { key: 'cost-estimate' as const, label: 'Cost Estimate', icon: <Calculator size={18} />, guardrail: 'Fee and duration range' },
+  { key: 'outputs' as const, label: 'Output Bundle', icon: <ClipboardCheck size={18} />, guardrail: 'Drafting record' },
+  { key: 'integrity' as const, label: 'Source Integrity', icon: <ShieldCheck size={18} />, guardrail: 'Evidence controls' },
 ]
 
 function App() {
   const [page, setPage] = useHashPage()
-  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -232,9 +227,9 @@ function App() {
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <a className="skip-link" href="#main">Skip to content</a>
-      <TopNav page={page} setPage={setPage} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-      <div className={page === 'landing' ? 'app-frame landing-mode' : 'app-frame'}>
-        <SideNav page={page} setPage={setPage} menuOpen={menuOpen} closeMenu={() => setMenuOpen(false)} />
+      {page === 'landing' && <LandingNav setPage={setPage} />}
+      <div className={page === 'landing' ? 'app-frame landing-mode' : 'app-frame prototype-mode'}>
+        {page !== 'landing' && <SideNav page={page} setPage={setPage} />}
         <main id="main" tabIndex={-1} className="main-shell">
           {page === 'landing' && <LandingPage setPage={setPage} />}
           {page === 'dashboard' && <DashboardPage setPage={setPage} />}
@@ -253,7 +248,7 @@ function App() {
 function useHashPage(): [PageKey, (key: PageKey) => void] {
   const readPage = (): PageKey => {
     const hash = window.location.hash.replace('#/', '') as PageKey
-    return navItems.some((item) => item.key === hash) ? hash : 'landing'
+    return hash === 'landing' || prototypeNavItems.some((item) => item.key === hash) ? hash : 'landing'
   }
   const [page, setPageState] = useState<PageKey>(readPage)
   useEffect(() => {
@@ -269,26 +264,28 @@ function useHashPage(): [PageKey, (key: PageKey) => void] {
   return [page, setPage]
 }
 
-function TopNav({ page, setPage, menuOpen, setMenuOpen }: { page: PageKey; setPage: (key: PageKey) => void; menuOpen: boolean; setMenuOpen: (value: boolean) => void }) {
+function LandingNav({ setPage }: { setPage: (key: PageKey) => void }) {
   return (
     <header className="top-nav">
-      <button className="icon-button lg:hidden" type="button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
-      <button className="brand-lockup" type="button" onClick={() => setPage('landing')} aria-label="Go to landing page"><span className="brand-mark">A</span><span><span className="brand-name">Arbitrium</span><span className="brand-subtitle">Arbitration intelligence</span></span></button>
-      <nav className="hidden items-center gap-1 xl:flex" aria-label="Primary">
-        {navItems.slice(1, 6).map((item) => <button key={item.key} className={page === item.key ? 'top-link active' : 'top-link'} type="button" onClick={() => setPage(item.key)}>{item.label}</button>)}
+      <div className="brand-lockup" aria-label="Arbitrium"><span className="brand-mark">A</span><span><span className="brand-name">Arbitrium</span><span className="brand-subtitle">Arbitration intelligence</span></span></div>
+      <nav className="landing-links" aria-label="Primary">
+        <button className="top-link active" type="button" onClick={() => setPage('landing')}>Home</button>
+        <button className="top-link" type="button" onClick={() => setPage('dashboard')}>Prototype</button>
       </nav>
-      <div className="ml-auto flex items-center gap-2"><div className="search-chip hidden md:flex"><Search size={16} /><span>Search matter, seat, clause</span></div><button className="secondary-button hidden sm:inline-flex" type="button" onClick={() => setPage('dashboard')}><LogIn size={16} />Lawyer Login</button></div>
     </header>
   )
 }
 
-function SideNav({ page, setPage, closeMenu, menuOpen }: { page: PageKey; setPage: (key: PageKey) => void; closeMenu: () => void; menuOpen: boolean }) {
+function SideNav({ page, setPage }: { page: PageKey; setPage: (key: PageKey) => void }) {
   return (
-    <aside className={menuOpen ? 'side-nav open' : 'side-nav'} aria-label="Workflow navigation">
+    <aside className="side-nav" aria-label="Workflow navigation">
       <div className="side-section">
-        <p className="side-label">Lawyer workflow</p>
-        {navItems.map((item) => (
-          <button key={item.key} className={page === item.key ? 'side-link active' : 'side-link'} type="button" onClick={() => { setPage(item.key); closeMenu() }}>
+        <p className="side-label">Arbitrium</p>
+        <button className="side-link home-link" type="button" onClick={() => setPage('landing')}>
+          <Home size={18} /><span><strong>Home</strong><small>Landing page</small></span>
+        </button>
+        {prototypeNavItems.map((item) => (
+          <button key={item.key} className={page === item.key ? 'side-link active' : 'side-link'} type="button" onClick={() => setPage(item.key)}>
             {item.icon}<span><strong>{item.label}</strong><small>{item.guardrail}</small></span>
           </button>
         ))}
@@ -302,10 +299,10 @@ function LandingPage({ setPage }: { setPage: (key: PageKey) => void }) {
   return (
     <div className="landing">
       <ScrollHero setPage={setPage} />
-      <section className="landing-section two-column reveal"><div><p className="eyebrow">Problem</p><h2>Arbitration clauses are too often copied before the seat is tested.</h2></div><div className="copy-stack"><p>Arbitrium turns contract facts, enforcement needs, institutional rules, and source-backed reference data into a defensible drafting record.</p><p>The market has broad legal analytics, institution clause tools, and general AI assistants. Arbitrium is narrower by design: seat, institution, cost, rule, and clause logic in one arbitration workflow.</p></div></section>
-      <section className="landing-section feature-band reveal"><div className="feature-copy"><p className="eyebrow">USP 1</p><h2>Seat suggestions with a paper trail.</h2><p>Recommendations break down speed, cost, neutrality, and enforceability instead of handing lawyers a black-box ranking.</p></div><div className="feature-grid">{['Weighted priorities', 'Pros and cons', 'Source citations', 'Clause handoff'].map((item) => <span key={item}>{item}</span>)}</div></section>
-      <section className="landing-section split-proof reveal"><div className="proof-panel"><DatabaseZap size={28} /><h3>Truth-first extraction</h3><p>The AI engine accepts a numeric fact only when its source excerpt appears in retrieved text.</p></div><div className="proof-panel warm"><Gavel size={28} /><h3>Drafting guardrails</h3><p>Clause output includes pathology checks for seat, institution, arbitrator count, language, and governing law.</p></div></section>
-      <section className="landing-section final-cta reveal keep-visible"><p className="eyebrow">Final prototype</p><h2>Move from clause instinct to arbitration reasoning.</h2><p>Start with a seat recommendation, refine the clause, review cost exposure, and export the lawyer-facing bundle.</p><button className="primary-button" type="button" onClick={() => setPage('dashboard')}>Enter prototype <ArrowRight size={18} /></button></section>
+      <section className="landing-section two-column reveal"><div><p className="eyebrow">Arbitration workflow</p><h2>Draft the clause after the seat has earned it.</h2></div><div className="copy-stack"><p>Arbitrium turns contract facts, enforcement needs, institutional rules, and source-backed reference data into a drafting record lawyers can review.</p><p>The workflow connects seat selection, institution choice, rule sources, cost exposure, and clause text so each recommendation carries its reasons with it.</p></div></section>
+      <section className="landing-section feature-band reveal"><div className="feature-copy"><p className="eyebrow">Seat intelligence</p><h2>Recommendations with reasons attached.</h2><p>Each ranking breaks down speed, cost, neutrality, and enforceability, then keeps the source trail beside the result.</p></div><div className="feature-grid">{['Weighted priorities', 'Pros and cons', 'Source citations', 'Clause handoff'].map((item) => <span key={item}>{item}</span>)}</div></section>
+      <section className="landing-section split-proof reveal"><div className="proof-panel"><DatabaseZap size={28} /><h3>Source-backed facts</h3><p>Numeric claims are accepted only when the supporting source text is present in the record.</p></div><div className="proof-panel warm"><Gavel size={28} /><h3>Clause risk review</h3><p>Clause output checks seat, institution, arbitrator count, language, and governing law before export.</p></div></section>
+      <section className="landing-section final-cta reveal keep-visible"><p className="eyebrow">Working session</p><h2>Move from clause instinct to arbitration reasoning.</h2><p>Start with a seat recommendation, refine the clause, review cost exposure, and export the lawyer-facing bundle.</p><button className="primary-button" type="button" onClick={() => setPage('dashboard')}>Open prototype <ArrowRight size={18} /></button></section>
     </div>
   )
 }
@@ -417,9 +414,9 @@ function ScrollHero({ setPage }: { setPage: (key: PageKey) => void }) {
         {!videoReady && !failed && <Loader2 className="hero-loader" size={28} aria-hidden="true" />}
         <div className={`hero-band band-${active + 1}`}>
           {active === 0 && <><p className="eyebrow">Arbitration intelligence</p><h1>Draft the clause after the seat has earned it.</h1><p>Seat fit, institutional rules, enforcement risk, and clause wording in one review flow.</p><button className="primary-button" type="button" onClick={() => setPage('seat-allocation')}>Start seat review <ArrowRight size={18} /></button></>}
-          {active === 1 && <><p className="eyebrow">No black box</p><h2>See why a seat was ranked.</h2><p>Each score is split into speed, cost, neutrality, and enforceability with citations attached.</p></>}
-          {active === 2 && <><p className="eyebrow">Clause safety</p><h2>Generate wording, then inspect its risks.</h2><p>Missing seat, mismatched institution, and governing-law gaps are shown before the clause leaves the page.</p></>}
-          {active === 3 && <><p className="eyebrow">Lawyer-ready output</p><h2>One bundle for the drafting record.</h2><p>Recommendation, rule links, clause text, cost caveats, and data status travel together.</p></>}
+          {active === 1 && <><p className="eyebrow">Explainable ranking</p><h2>See why a seat was ranked.</h2><p>Each score is split into speed, cost, neutrality, and enforceability with source links attached.</p></>}
+          {active === 2 && <><p className="eyebrow">Clause review</p><h2>Generate wording, then inspect its risks.</h2><p>Seat, institution, tribunal size, language, and governing-law issues are shown before export.</p></>}
+          {active === 3 && <><p className="eyebrow">Drafting record</p><h2>One bundle for the matter file.</h2><p>Recommendation, rule links, clause text, cost notes, and source status travel together.</p></>}
         </div>
       </div>
     </section>
@@ -427,12 +424,12 @@ function ScrollHero({ setPage }: { setPage: (key: PageKey) => void }) {
 }
 
 function DashboardPage({ setPage }: { setPage: (key: PageKey) => void }) {
-  return <PageWrap eyebrow="Dashboard" title="Arbitrium workspace" description="A command surface for seat choice, clauses, costs, and source review."><MetricGrid /><div className="dashboard-grid"><Panel title="Matter intake" icon={<Upload size={20} />}><p className="muted">Upload a contract or start manually. Slider weights remain required by design.</p><div className="button-row"><button className="primary-button" type="button" onClick={() => setPage('seat-allocation')}>Analyze seat <ArrowRight size={16} /></button><button className="secondary-button" type="button" onClick={() => setPage('clause-generation')}>Generate clause</button></div></Panel><Panel title="Recent lawyer outputs" icon={<ClipboardCheck size={20} />}><Timeline items={[['Seat recommendation', 'Singapore + SIAC ranked first for neutral cross-border posture.'], ['Clause draft', 'Three-member tribunal clause passed pathology checks.'], ['Cost review', 'Prototype fee schedule flagged as unverified.']]} /></Panel><Panel title="Integrity status" icon={<ShieldCheck size={20} />}><StatusList items={[['Backend APIs', 'Implemented for all PRD pages', 'ready'], ['Annual report figures', 'Awaiting verified values', 'warn'], ['AI extraction guard', 'Rejects unsupported numeric facts', 'ready']]} /></Panel></div></PageWrap>
+  return <PageWrap eyebrow="Workspace" title="Arbitrium matter workspace" description="A focused workflow for seat choice, clauses, costs, and source review."><MetricGrid /><div className="dashboard-grid"><Panel title="Matter intake" icon={<Upload size={20} />}><p className="muted">Upload a contract or enter the matter facts manually. Priority weights stay visible throughout the recommendation.</p><div className="button-row"><button className="primary-button" type="button" onClick={() => setPage('seat-allocation')}>Analyze seat <ArrowRight size={16} /></button><button className="secondary-button" type="button" onClick={() => setPage('clause-generation')}>Draft clause</button></div></Panel><Panel title="Recent outputs" icon={<ClipboardCheck size={20} />}><Timeline items={[['Seat recommendation', 'New Delhi + DIAC ranked first for urgent domestic interim relief.'], ['Clause draft', 'Sole-arbitrator domestic clause ready for legal review.'], ['Cost review', 'Fee range shown with source status beside the estimate.']]} /></Panel><Panel title="Source status" icon={<ShieldCheck size={20} />}><StatusList items={[['API services', 'Seat, rule, clause, cost, and output flows are available', 'ready'], ['Fee schedules', 'Figures are separated from legal recommendations until source review is complete', 'warn'], ['Fact checks', 'Unsupported numeric claims are rejected before they enter the record', 'ready']]} /></Panel></div></PageWrap>
 }
 
 function MetricGrid() {
-  const metrics = [['5', 'Core pages', 'Dashboard, seat, rules, clause, cost'], ['4', 'Scoring weights', 'Speed, cost, neutrality, enforcement'], ['0', 'Invented figures', 'Unknown numbers stay blank'], ['1', 'Export bundle', 'Lawyer-facing final content']]
-  return <section className="metric-grid" aria-label="Prototype metrics">{metrics.map(([value, label, detail]) => <article className="metric-card" key={label}><p>{label}</p><strong>{value}</strong><span>{detail}</span></article>)}</section>
+  const metrics = [['5', 'Workflow areas', 'Seat, rules, clause, cost, output'], ['4', 'Scoring weights', 'Speed, cost, neutrality, enforcement'], ['0', 'Unsupported facts', 'Unknown numbers stay blank'], ['1', 'Matter bundle', 'Lawyer-facing drafting record']]
+  return <section className="metric-grid" aria-label="Workflow metrics">{metrics.map(([value, label, detail]) => <article className="metric-card" key={label}><p>{label}</p><strong>{value}</strong><span>{detail}</span></article>)}</section>
 }
 
 function SeatAllocationPage({ setPage }: { setPage: (key: PageKey) => void }) {
@@ -446,13 +443,13 @@ function SeatAllocationPage({ setPage }: { setPage: (key: PageKey) => void }) {
   const [courtPriority, setCourtPriority] = useState('Extremely high: urgent pre-arbitral interim relief is probable')
   const [results, setResults] = useState<SeatResult[]>(domesticFallbackResults)
   const [loading, setLoading] = useState(false)
-  const [source, setSource] = useState<'api' | 'demo'>('demo')
+  const [source, setSource] = useState<'api' | 'local'>('local')
   const analyze = async (event: FormEvent) => {
     event.preventDefault()
     setLoading(true)
     const normalized = normalizeWeights(weights)
     try {
-      if (!API_ENABLED) throw new Error('demo mode')
+      if (!API_ENABLED) throw new Error('local mode')
       const response = await fetch(`${API_BASE}/api/v1/seat-allocation/analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ arbitration_type: arbitrationType, parties: [{ name: 'Claimant entity', role: 'claimant', jurisdiction: 'India' }, { name: 'Respondent entity', role: 'respondent', jurisdiction: arbitrationType === 'domestic' ? 'India' : 'Singapore' }], scope: `${scope}. Sector: ${sector}. Geography: ${region}. Court intervention priority: ${courtPriority}.`, claim_quantum: claimQuantum, claim_currency: 'USD', governing_law: governingLaw, priority_speed: normalized.speed, priority_cost: normalized.cost, priority_neutrality: normalized.neutrality, priority_enforceability: normalized.enforceability }) })
       if (!response.ok) throw new Error('analysis failed')
       const data = (await response.json()) as { results: SeatResult[] }
@@ -460,12 +457,12 @@ function SeatAllocationPage({ setPage }: { setPage: (key: PageKey) => void }) {
       setSource('api')
     } catch {
       setResults(arbitrationType === 'domestic' ? domesticFallbackResults : crossBorderFallbackResults)
-      setSource('demo')
+      setSource('local')
     } finally {
       setLoading(false)
     }
   }
-  return <PageWrap eyebrow="Seat Allocation" title="Choose a domestic Indian seat with reasons, not habit." description="Questionnaire fields track sector, geography, neutrality, High Court access, infrastructure, counsel base, and claim value."><div className="workflow-grid"><form className="panel" onSubmit={analyze}><div className="panel-heading"><SlidersHorizontal size={20} /><h2>Intake</h2></div><label>Arbitration path<select value={arbitrationType} onChange={(event) => setArbitrationType(event.target.value as 'domestic' | 'cross_border')}><option value="domestic">Domestic arbitration</option><option value="cross_border">Cross-border arbitration</option></select></label><label>Contract scope<textarea value={scope} onChange={(event) => setScope(event.target.value)} /></label><label>Sector<select value={sector} onChange={(event) => setSector(event.target.value)}><option>Construction, Engineering and Infrastructure</option><option>Financial Services, Banking, Securities and Private Equity / VC</option><option>Information Technology, IP, Software and E-Commerce</option><option>Energy, Oil and Gas, Mining and Utilities</option><option>General Commercial, Shareholder Agreements, Joint Ventures and M&A</option></select></label><label>Geographic proximity<select value={region} onChange={(event) => setRegion(event.target.value)}><option>Northern Region</option><option>Western Region</option><option>Southern Region</option><option>Eastern / North-Eastern Region</option><option>Multi-state / Pan-India Operations</option></select></label><label>Court intervention need<select value={courtPriority} onChange={(event) => setCourtPriority(event.target.value)}><option>Extremely high: urgent pre-arbitral interim relief is probable</option><option>Moderate: interim relief may be needed</option><option>Low: primarily monetary or post-completion damages</option></select></label><label>Governing law<input value={governingLaw} onChange={(event) => setGoverningLaw(event.target.value)} /></label><label>Claim quantum, USD<input type="number" value={claimQuantum} min={0} onChange={(event) => setClaimQuantum(Number(event.target.value))} /></label><div className="slider-stack">{Object.entries(weights).map(([key, value]) => <label key={key}><span>{titleCase(key)} {value}%</span><input type="range" min={0} max={100} value={value} onChange={(event) => setWeights({ ...weights, [key]: Number(event.target.value) })} /></label>)}</div><div className="button-row"><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <Scale size={16} />}Run allocation</button><button className="secondary-button" type="button"><Upload size={16} />Upload contract</button></div><p className="fine-print">API mode: {source === 'api' ? 'live backend response' : 'demo data because the backend is offline or not seeded'}</p></form><aside className="guidance-stack"><Panel title="Domestic arbitration" icon={<Home size={18} />}><p className="muted">For India-seated disputes, the juridical seat anchors supervisory High Court jurisdiction for interim relief, appointments, and set-aside challenges.</p></Panel><Panel title="Institutional fit" icon={<Gavel size={18} />}><p className="muted">For domestic commercial matters, MCIA and Delhi DIAC lead the shortlist; ICA remains sector-useful and IIAC is the statutory option.</p></Panel></aside></div><ResultList results={results} setPage={setPage} /></PageWrap>
+  return <PageWrap eyebrow="Seat Selection" title="Choose a domestic Indian seat with reasons, not habit." description="Questionnaire fields track sector, geography, neutrality, High Court access, infrastructure, counsel base, and claim value."><div className="workflow-grid"><form className="panel" onSubmit={analyze}><div className="panel-heading"><SlidersHorizontal size={20} /><h2>Intake</h2></div><label>Arbitration path<select value={arbitrationType} onChange={(event) => setArbitrationType(event.target.value as 'domestic' | 'cross_border')}><option value="domestic">Domestic arbitration</option><option value="cross_border">Cross-border arbitration</option></select></label><label>Contract scope<textarea value={scope} onChange={(event) => setScope(event.target.value)} /></label><label>Sector<select value={sector} onChange={(event) => setSector(event.target.value)}><option>Construction, Engineering and Infrastructure</option><option>Financial Services, Banking, Securities and Private Equity / VC</option><option>Information Technology, IP, Software and E-Commerce</option><option>Energy, Oil and Gas, Mining and Utilities</option><option>General Commercial, Shareholder Agreements, Joint Ventures and M&A</option></select></label><label>Geographic proximity<select value={region} onChange={(event) => setRegion(event.target.value)}><option>Northern Region</option><option>Western Region</option><option>Southern Region</option><option>Eastern / North-Eastern Region</option><option>Multi-state / Pan-India Operations</option></select></label><label>Court intervention need<select value={courtPriority} onChange={(event) => setCourtPriority(event.target.value)}><option>Extremely high: urgent pre-arbitral interim relief is probable</option><option>Moderate: interim relief may be needed</option><option>Low: primarily monetary or post-completion damages</option></select></label><label>Governing law<input value={governingLaw} onChange={(event) => setGoverningLaw(event.target.value)} /></label><label>Claim quantum, USD<input type="number" value={claimQuantum} min={0} onChange={(event) => setClaimQuantum(Number(event.target.value))} /></label><div className="slider-stack">{Object.entries(weights).map(([key, value]) => <label key={key}><span>{titleCase(key)} {value}%</span><input type="range" min={0} max={100} value={value} onChange={(event) => setWeights({ ...weights, [key]: Number(event.target.value) })} /></label>)}</div><div className="button-row"><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <Scale size={16} />}Run allocation</button><button className="secondary-button" type="button"><Upload size={16} />Upload contract</button></div><p className="fine-print">Connection: {source === 'api' ? 'live backend' : 'local reference data'}</p></form><aside className="guidance-stack"><Panel title="Domestic arbitration" icon={<Home size={18} />}><p className="muted">For India-seated disputes, the juridical seat anchors supervisory High Court jurisdiction for interim relief, appointments, and set-aside challenges.</p></Panel><Panel title="Institutional fit" icon={<Gavel size={18} />}><p className="muted">For domestic commercial matters, MCIA and Delhi DIAC lead the shortlist; ICA remains sector-useful and IIAC is the statutory option.</p></Panel></aside></div><ResultList results={results} setPage={setPage} /></PageWrap>
 }
 
 function ResultList({ results, setPage }: { results: SeatResult[]; setPage: (key: PageKey) => void }) {
@@ -475,7 +472,7 @@ function ResultList({ results, setPage }: { results: SeatResult[]; setPage: (key
 function RulesPage() {
   const [query, setQuery] = useState('')
   const filtered = rules.filter((rule) => rule.rules_name.toLowerCase().includes(query.toLowerCase()))
-  return <PageWrap eyebrow="Live Rule Tracking" title="Primary rule sources in one review lane." description="This prototype shows tracked source links and last-check status. A production scheduler is still a known backend task."><div className="toolbar"><label className="search-input"><Search size={16} /><span className="sr-only">Search rules</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search rules or institutions" /></label></div><div className="table-wrap"><table><thead><tr><th>Institution</th><th>Rule set</th><th>Year</th><th>Status</th><th>Source</th></tr></thead><tbody>{filtered.map((rule) => <tr key={rule.id}><td>{institutions.find((item) => item.id === rule.institution_id)?.short_code}</td><td><strong>{rule.rules_name}</strong><span>{rule.summary}</span></td><td>{rule.version_year ?? 'Current hub'}</td><td><Badge tone="ready">Tracked</Badge></td><td><a href={rule.source_url} target="_blank" rel="noreferrer">Open source</a></td></tr>)}</tbody></table>{filtered.length === 0 && <p className="empty-state">No rules found.</p>}</div></PageWrap>
+  return <PageWrap eyebrow="Rule Sources" title="Primary rule sources in one review lane." description="Tracked institution rules, version notes, and source links stay available beside the drafting workflow."><div className="toolbar"><label className="search-input"><Search size={16} /><span className="sr-only">Search rules</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search rules or institutions" /></label></div><div className="table-wrap"><table><thead><tr><th>Institution</th><th>Rule set</th><th>Year</th><th>Status</th><th>Source</th></tr></thead><tbody>{filtered.map((rule) => <tr key={rule.id}><td>{institutions.find((item) => item.id === rule.institution_id)?.short_code}</td><td><strong>{rule.rules_name}</strong><span>{rule.summary}</span></td><td>{rule.version_year ?? 'Current hub'}</td><td><Badge tone="ready">Tracked</Badge></td><td><a href={rule.source_url} target="_blank" rel="noreferrer">Open source</a></td></tr>)}</tbody></table>{filtered.length === 0 && <p className="empty-state">No rules found.</p>}</div></PageWrap>
 }
 
 function ClausePage() {
@@ -488,17 +485,17 @@ function ClausePage() {
     event.preventDefault()
     setLoading(true)
     try {
-      if (!API_ENABLED) throw new Error('demo mode')
+      if (!API_ENABLED) throw new Error('local mode')
       const response = await fetch(`${API_BASE}/api/v1/clauses/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seat_id: seatId, institution_id: institutionId, num_arbitrators: arbitrators, appointment_mechanism: arbitrators === 'three' ? 'co_arbitrator_nomination' : 'institutional_default', language: 'English', governing_law_contract: 'Indian law', governing_law_arbitration: 'Indian law', party_details: [{ name: 'Claimant entity', role: 'claimant', jurisdiction: 'India' }, { name: 'Respondent entity', role: 'respondent', jurisdiction: 'India' }] }) })
       if (!response.ok) throw new Error('clause failed')
       setClause((await response.json()) as ClauseRead)
     } catch {
-      setClause({ generated_text: 'Any dispute arising out of or in connection with this agreement shall be referred to and finally resolved by arbitration administered by the selected Indian institution in accordance with its arbitration rules. The seat of arbitration shall be the selected Indian seat. The tribunal shall consist of the selected number of arbitrators. The language of the arbitration shall be English.', pathology_check_notes: ['Prototype fallback text. Run the backend for institution-specific clause wording.', 'Confirm the institution name, seat, venue, governing law, tribunal size, and language before client use.'] })
+      setClause({ generated_text: 'Any dispute arising out of or in connection with this agreement shall be referred to and finally resolved by arbitration administered by the selected Indian institution in accordance with its arbitration rules. The seat of arbitration shall be the selected Indian seat. The tribunal shall consist of the selected number of arbitrators. The language of the arbitration shall be English.', pathology_check_notes: ['Local reference wording is shown because the live API is not connected in this session.', 'Confirm the institution name, seat, venue, governing law, tribunal size, and language before client use.'] })
     } finally {
       setLoading(false)
     }
   }
-  return <PageWrap eyebrow="Clause Generation" title="Draft the arbitration agreement with pathology notes visible." description="The module takes a recommended seat or manual settings and keeps legal review warnings attached to the text."><div className="workflow-grid"><form className="panel" onSubmit={generate}><div className="panel-heading"><FileText size={20} /><h2>Clause settings</h2></div><label>Selected seat<select value={seatId} onChange={(event) => setSeatId(Number(event.target.value))}>{seats.map((seat) => <option key={seat.id} value={seat.id}>{seat.name}</option>)}</select></label><label>Institution<select value={institutionId} onChange={(event) => setInstitutionId(Number(event.target.value))}>{institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.short_code}</option>)}</select></label><label>Tribunal<select value={arbitrators} onChange={(event) => setArbitrators(event.target.value as 'sole' | 'three' | 'emergency')}><option value="sole">Sole arbitrator</option><option value="three">Three-member tribunal</option><option value="emergency">Emergency provisions</option></select></label><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <FileText size={16} />}Generate clause</button></form><Panel title="Generated clause" icon={<Copy size={20} />}>{clause ? <><blockquote className="clause-output">{clause.generated_text}</blockquote><StatusList items={clause.pathology_check_notes.map((note) => [note, 'Legal review required before use', note.toLowerCase().includes('fallback') ? 'warn' : 'ready'])} /></> : <p className="empty-state">No clause generated yet.</p>}</Panel></div></PageWrap>
+  return <PageWrap eyebrow="Clause Drafting" title="Draft the arbitration agreement with risk notes visible." description="Recommended seat data and manual settings flow into clause text with legal review notes attached."><div className="workflow-grid"><form className="panel" onSubmit={generate}><div className="panel-heading"><FileText size={20} /><h2>Clause settings</h2></div><label>Selected seat<select value={seatId} onChange={(event) => setSeatId(Number(event.target.value))}>{seats.map((seat) => <option key={seat.id} value={seat.id}>{seat.name}</option>)}</select></label><label>Institution<select value={institutionId} onChange={(event) => setInstitutionId(Number(event.target.value))}>{institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.short_code}</option>)}</select></label><label>Tribunal<select value={arbitrators} onChange={(event) => setArbitrators(event.target.value as 'sole' | 'three' | 'emergency')}><option value="sole">Sole arbitrator</option><option value="three">Three-member tribunal</option><option value="emergency">Emergency provisions</option></select></label><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <FileText size={16} />}Generate clause</button></form><Panel title="Generated clause" icon={<Copy size={20} />}>{clause ? <><blockquote className="clause-output">{clause.generated_text}</blockquote><StatusList items={clause.pathology_check_notes.map((note) => [note, 'Legal review required before use', note.toLowerCase().includes('local reference') ? 'warn' : 'ready'])} /></> : <p className="empty-state">No clause generated yet.</p>}</Panel></div></PageWrap>
 }
 
 function CostPage() {
@@ -510,7 +507,7 @@ function CostPage() {
     event.preventDefault()
     setLoading(true)
     try {
-      if (!API_ENABLED) throw new Error('demo mode')
+      if (!API_ENABLED) throw new Error('local mode')
       const response = await fetch(`${API_BASE}/api/v1/cost-estimate/calculate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ institution_id: institutionId, claim_amount: claimAmount, currency: 'USD' }) })
       if (!response.ok) throw new Error('cost failed')
       setEstimate((await response.json()) as CostEstimateRead)
@@ -520,16 +517,16 @@ function CostPage() {
       setLoading(false)
     }
   }
-  return <PageWrap eyebrow="Cost and Duration Estimate" title="Estimate exposure, then mark what still needs verification." description="The backend calculator works, but seeded fee rows are expressly flagged as unverified until checked against official fee schedules."><div className="workflow-grid"><form className="panel" onSubmit={calculate}><div className="panel-heading"><Calculator size={20} /><h2>Inputs</h2></div><label>Institution<select value={institutionId} onChange={(event) => setInstitutionId(Number(event.target.value))}>{institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.short_code}</option>)}</select></label><label>Claim amount, USD<input type="number" min={1} value={claimAmount} onChange={(event) => setClaimAmount(Number(event.target.value))} /></label><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <BarChart3 size={16} />}Calculate estimate</button></form><Panel title="Estimate" icon={<BarChart3 size={20} />}>{estimate ? <div className="estimate-grid"><Metric label="Admin fee" value={money(estimate.estimated_admin_fee)} /><Metric label="Tribunal fee range" value={`${money(estimate.estimated_tribunal_fee_min)} to ${money(estimate.estimated_tribunal_fee_max)}`} /><Metric label="Duration" value={`${estimate.estimated_duration_months_min} to ${estimate.estimated_duration_months_max} months`} /><Badge tone={estimate.breakdown.verified ? 'ready' : 'warn'}>{estimate.breakdown.verified ? 'Verified schedule' : 'Unverified prototype schedule'}</Badge></div> : <p className="empty-state">No estimate calculated yet.</p>}</Panel></div></PageWrap>
+  return <PageWrap eyebrow="Cost Estimate" title="Estimate fee and duration exposure." description="Administrative fees, tribunal fee ranges, duration bands, and source status stay visible together."><div className="workflow-grid"><form className="panel" onSubmit={calculate}><div className="panel-heading"><Calculator size={20} /><h2>Inputs</h2></div><label>Institution<select value={institutionId} onChange={(event) => setInstitutionId(Number(event.target.value))}>{institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.short_code}</option>)}</select></label><label>Claim amount, USD<input type="number" min={1} value={claimAmount} onChange={(event) => setClaimAmount(Number(event.target.value))} /></label><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <BarChart3 size={16} />}Calculate estimate</button></form><Panel title="Estimate" icon={<BarChart3 size={20} />}>{estimate ? <div className="estimate-grid"><Metric label="Admin fee" value={money(estimate.estimated_admin_fee)} /><Metric label="Tribunal fee range" value={`${money(estimate.estimated_tribunal_fee_min)} to ${money(estimate.estimated_tribunal_fee_max)}`} /><Metric label="Duration" value={`${estimate.estimated_duration_months_min} to ${estimate.estimated_duration_months_max} months`} /><Badge tone={estimate.breakdown.verified ? 'ready' : 'warn'}>{estimate.breakdown.verified ? 'Source-reviewed schedule' : 'Source review required'}</Badge></div> : <p className="empty-state">No estimate calculated yet.</p>}</Panel></div></PageWrap>
 }
 
 function OutputsPage({ setPage }: { setPage: (key: PageKey) => void }) {
-  const outputs: [string, string, PageKey][] = [['Seat memo', 'Ranked seat and institution recommendation with pros, cons, weights, and citations.', 'seat-allocation'], ['Clause text', 'Generated arbitration clause plus pathology check notes.', 'clause-generation'], ['Cost note', 'Admin fee, tribunal fee, duration range, and verification status.', 'cost-estimate'], ['Source appendix', 'Rule links, annual report links, extraction guard status, and known data gaps.', 'integrity']]
-  return <PageWrap eyebrow="Final Content" title="Lawyer-facing output bundle" description="A single review pack for the drafting file, with status labels and source links kept beside every major claim."><div className="output-grid">{outputs.map(([title, detail, target]) => <article className="output-card" key={title}><BadgeCheck size={24} /><h3>{title}</h3><p>{detail}</p><button className="secondary-button" type="button" onClick={() => setPage(target)}>Open <ArrowRight size={16} /></button></article>)}</div></PageWrap>
+  const outputs: [string, string, PageKey][] = [['Seat memo', 'Ranked seat and institution recommendation with pros, cons, weights, and citations.', 'seat-allocation'], ['Clause text', 'Generated arbitration clause plus legal risk notes.', 'clause-generation'], ['Cost note', 'Admin fee, tribunal fee, duration range, and source status.', 'cost-estimate'], ['Source appendix', 'Rule links, source excerpts, and fact-check status.', 'integrity']]
+  return <PageWrap eyebrow="Output Bundle" title="Lawyer-facing output bundle" description="A single review pack for the drafting file, with status labels and source links kept beside every major claim."><div className="output-grid">{outputs.map(([title, detail, target]) => <article className="output-card" key={title}><BadgeCheck size={24} /><h3>{title}</h3><p>{detail}</p><button className="secondary-button" type="button" onClick={() => setPage(target)}>Open <ArrowRight size={16} /></button></article>)}</div></PageWrap>
 }
 
 function IntegrityPage() {
-  return <PageWrap eyebrow="Data Integrity" title="The prototype says what it knows and what it does not." description="Arbitrium is built for legal decision support, so unsupported numbers are not dressed up as facts."><div className="dashboard-grid"><Panel title="No-fabrication chain" icon={<ShieldCheck size={20} />}><StatusList items={[['Retrieved text first', 'The AI engine must search or fetch source material before answering.', 'ready'], ['Verbatim excerpts', 'Numeric facts require a source excerpt from retrieved text.', 'ready'], ['Guard check', 'Facts fail when the excerpt cannot be found in the source.', 'ready']]} /></Panel><Panel title="Known gaps" icon={<AlertCircle size={20} />}><StatusList items={[['SIAC annual report fetch', 'Requests-based fetch hit HTTP 403 and needs a browser strategy.', 'warn'], ['Fee schedules', 'Seed rows are illustrative until confirmed against official calculators.', 'warn'], ['Production database', 'PostgreSQL migration still needs a real server run.', 'warn']]} /></Panel></div></PageWrap>
+  return <PageWrap eyebrow="Source Integrity" title="The record separates supported facts from review items." description="Arbitrium keeps legal decision support tied to source text, rule links, and visible verification status."><div className="dashboard-grid"><Panel title="Evidence chain" icon={<ShieldCheck size={20} />}><StatusList items={[['Source text first', 'The source engine searches or fetches material before answering.', 'ready'], ['Verbatim excerpts', 'Numeric facts require a matching source excerpt.', 'ready'], ['Guard check', 'Facts fail when the excerpt cannot be found in the source.', 'ready']]} /></Panel><Panel title="Review controls" icon={<AlertCircle size={20} />}><StatusList items={[['Rule sources', 'Institution rules stay linked beside recommendations and clauses', 'ready'], ['Fee schedules', 'Cost figures remain marked until reviewed against official calculators', 'warn'], ['Matter bundle', 'Seat, clause, cost, and source notes export together', 'ready']]} /></Panel></div></PageWrap>
 }
 
 function PageWrap({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children: ReactNode }) {

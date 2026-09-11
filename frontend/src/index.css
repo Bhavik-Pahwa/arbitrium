@@ -141,6 +141,13 @@ td span {
   backdrop-filter: blur(18px);
 }
 
+.landing-links {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-left: auto;
+}
+
 .brand-lockup {
   display: inline-flex;
   min-height: 44px;
@@ -256,7 +263,7 @@ td span {
 .app-frame {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
-  min-height: calc(100vh - 72px);
+  min-height: 100vh;
 }
 
 .app-frame.landing-mode {
@@ -269,8 +276,8 @@ td span {
 
 .side-nav {
   position: sticky;
-  top: 72px;
-  height: calc(100vh - 72px);
+  top: 0;
+  height: 100vh;
   border-right: 1px solid var(--line);
   background: #efe7da;
   padding: 1rem;
@@ -835,20 +842,13 @@ td span {
 
 @media (max-width: 1024px) {
   .app-frame {
-    grid-template-columns: 1fr;
+    grid-template-columns: 230px minmax(0, 1fr);
   }
 
   .side-nav {
-    position: fixed;
-    inset: 72px auto 0 0;
-    z-index: 35;
-    width: min(86vw, 320px);
-    transform: translateX(-105%);
-    transition: transform .28s var(--ease);
-  }
-
-  .side-nav.open {
-    transform: translateX(0);
+    position: sticky;
+    width: auto;
+    transform: none;
   }
 
   .workflow-grid,
@@ -892,6 +892,17 @@ td span {
   .brand-subtitle,
   .search-chip {
     display: none;
+  }
+
+  .app-frame {
+    grid-template-columns: 1fr;
+  }
+
+  .side-nav {
+    position: relative;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 
   .hero-stage {

@@ -17,7 +17,10 @@ Backend:
 
 ```powershell
 cd backend
-.\.venv310\Scripts\activate
+py -3.10 -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
 uvicorn app.main:app --reload
 ```
 

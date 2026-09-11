@@ -18,7 +18,7 @@ read that file's docstring before treating any seeded number as fact.
 
 ```bash
 cd backend
-python -m venv .venv
+py -3.10 -m venv .venv  # Windows; use a Python 3.10/3.11 interpreter on macOS/Linux
 . .venv/Scripts/activate   # Windows; use `source .venv/bin/activate` on macOS/Linux
 pip install -r requirements.txt
 cp .env.example .env       # then edit DATABASE_URL / SECRET_KEY
