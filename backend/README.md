@@ -1,8 +1,8 @@
 # Arbitrium — Backend
 
 FastAPI + PostgreSQL backend implementing Iteration 1 of the Arbitrium PRD
-(`iteration1.md`). This pass covers the **backend only** — see
-`../CHECKLIST.md` for full scope/status and known gaps (frontend, live
+(`../docs/project/product-requirements.md`). This pass covers the **backend only** — see
+`../docs/project/implementation-checklist.md` for full scope/status and known gaps (frontend, live
 rule-refresh job, replacing placeholder fee/annual-report figures with
 verified numbers).
 

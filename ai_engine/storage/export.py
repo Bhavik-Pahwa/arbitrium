@@ -1,6 +1,7 @@
 """Exports accepted facts to a JSON bundle shaped for manual/human review
 and eventual loading into the backend's data model. Deliberately not an
-automatic write into backend Postgres — see CHECKLIST.md design decision 2.
+automatic write into backend Postgres — see docs/project/ai-engine-checklist.md
+design decision 2.
 """
 
 import json

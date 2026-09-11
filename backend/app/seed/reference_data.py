@@ -112,6 +112,24 @@ INSTITUTIONS = [
         "home_seat_name": "Mumbai, India",
     },
     {
+        "short_code": "DIAC-DELHI",
+        "name": "Delhi International Arbitration Centre",
+        "website_url": "https://dhcdiac.nic.in/",
+        "home_seat_name": "New Delhi, India",
+    },
+    {
+        "short_code": "ICA",
+        "name": "Indian Council of Arbitration",
+        "website_url": "https://www.icaindia.co.in/",
+        "home_seat_name": "New Delhi, India",
+    },
+    {
+        "short_code": "IIAC",
+        "name": "India International Arbitration Centre",
+        "website_url": "https://iiac.gov.in/",
+        "home_seat_name": "New Delhi, India",
+    },
+    {
         "short_code": "ADHOC",
         "name": "Ad Hoc (UNCITRAL Rules, no administering institution)",
         "website_url": None,
@@ -157,6 +175,34 @@ INSTITUTION_RULES = [
         "version_year": 2025,
         "source_url": "https://siac.org.sg/siac-rules-2025",
         "summary": "SIAC's current administered-arbitration rules, effective 2025.",
+    },
+    {
+        "institution_short_code": "MCIA",
+        "rules_name": "MCIA Arbitration Rules 2016, revised 2025",
+        "version_year": 2025,
+        "source_url": "https://blog.ipleaders.in/arbitral-institutions-in-india/",
+        "summary": "Domestic India-focused institutional rules noted by iPleaders as a natural fit for commercial disputes.",
+    },
+    {
+        "institution_short_code": "DIAC-DELHI",
+        "rules_name": "Delhi International Arbitration Centre Rules 2023",
+        "version_year": 2023,
+        "source_url": "https://blog.ipleaders.in/arbitral-institutions-in-india/",
+        "summary": "Court-annexed Delhi rules; spell out the full institution name to avoid confusion with Dubai DIAC.",
+    },
+    {
+        "institution_short_code": "ICA",
+        "rules_name": "Indian Council of Arbitration Rules",
+        "version_year": None,
+        "source_url": "https://blog.ipleaders.in/arbitral-institutions-in-india/",
+        "summary": "Older domestic institution with continued relevance for trade, commodity, and maritime disputes.",
+    },
+    {
+        "institution_short_code": "IIAC",
+        "rules_name": "India International Arbitration Centre Rules",
+        "version_year": None,
+        "source_url": "https://blog.ipleaders.in/arbitral-institutions-in-india/",
+        "summary": "Statutory New Delhi institution created to support India's institutional arbitration framework.",
     },
 ]
 
@@ -270,6 +316,36 @@ FEE_SCHEDULES = [
         "source_url": "https://mcia.org.in/",
     },
     {
+        "institution_short_code": "DIAC-DELHI",
+        "schedule_name": "DIAC Delhi Illustrative Fee Schedule (placeholder)",
+        "currency": "USD",
+        "admin_fee_tiers": _tiers(0.45, 0.55, admin=True),
+        "tribunal_fee_tiers": _tiers(0.45, 0.55, admin=False),
+        "typical_duration_months_min": 10,
+        "typical_duration_months_max": 22,
+        "source_url": "https://dhcdiac.nic.in/",
+    },
+    {
+        "institution_short_code": "ICA",
+        "schedule_name": "ICA Illustrative Fee Schedule (placeholder)",
+        "currency": "USD",
+        "admin_fee_tiers": _tiers(0.4, 0.5, admin=True),
+        "tribunal_fee_tiers": _tiers(0.4, 0.5, admin=False),
+        "typical_duration_months_min": 12,
+        "typical_duration_months_max": 24,
+        "source_url": "https://www.icaindia.co.in/",
+    },
+    {
+        "institution_short_code": "IIAC",
+        "schedule_name": "IIAC Illustrative Fee Schedule (placeholder)",
+        "currency": "USD",
+        "admin_fee_tiers": _tiers(0.45, 0.55, admin=True),
+        "tribunal_fee_tiers": _tiers(0.45, 0.55, admin=False),
+        "typical_duration_months_min": 12,
+        "typical_duration_months_max": 24,
+        "source_url": "https://iiac.gov.in/",
+    },
+    {
         "institution_short_code": "ADHOC",
         "schedule_name": "Ad Hoc (UNCITRAL) Illustrative Fee Schedule (placeholder)",
         "currency": "USD",
@@ -305,9 +381,25 @@ SEAT_INSTITUTION_RATINGS = [
     ),
     (
         "Mumbai, India", "MCIA", 3, 5, 3, 3,
-        "Lower administrative cost; still building international caseload track record "
-        "relative to the four established hubs above; India-seated award enforcement can "
-        "face domestic court delays in contested cases.",
+        "Domestic commercial institution with a published fee schedule and a Mumbai seat; "
+        "the iPleaders institutional-arbitration overview identifies MCIA as a natural "
+        "choice for purely domestic commercial contracts.",
+    ),
+    (
+        "New Delhi, India", "DIAC-DELHI", 4, 5, 3, 4,
+        "Court-annexed Delhi institution with strong fit where Section 9, Section 11, "
+        "or Section 34 access to the Delhi High Court is strategically important; use "
+        "the full name to avoid confusion with Dubai DIAC.",
+    ),
+    (
+        "New Delhi, India", "ICA", 3, 5, 3, 3,
+        "Older domestic institution that remains useful for trade, commodity, and "
+        "maritime contracts with an established ICA drafting history.",
+    ),
+    (
+        "New Delhi, India", "IIAC", 3, 4, 3, 4,
+        "Statutory institution intended to anchor India's institutional-arbitration "
+        "policy; still building market volume relative to MCIA and DIAC.",
     ),
     (
         "New Delhi, India", "ADHOC", 2, 5, 3, 3,

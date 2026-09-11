@@ -3,10 +3,10 @@
 Standalone Python module that turns arbitral institutions' annual
 reports/rules pages into structured, source-cited facts (case volumes by
 sector/country/seat, duration, tribunal composition) via a retrieval-
-augmented, tool-calling LLM agent. See `CHECKLIST.md` for the full
+augmented, tool-calling LLM agent. See `../docs/project/ai-engine-checklist.md` for the full
 architecture rationale and design decisions.
 
-Decoupled from `backend/` — see CHECKLIST.md design decision 2. Its own
+Decoupled from `backend/` — see `../docs/project/ai-engine-checklist.md` design decision 2. Its own
 storage (`data/corpus/`, `data/facts/facts.db`) is local to this module;
 `storage/export.py` produces a JSON bundle for a human (or a follow-up
 task) to load into the backend.
