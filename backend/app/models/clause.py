@@ -14,6 +14,7 @@ class Clause(Base):
     source_seat_allocation_result_id: Mapped[int | None] = mapped_column(
         ForeignKey("seat_allocation_results.id"), nullable=True
     )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
     seat_id: Mapped[int] = mapped_column(ForeignKey("seats.id"), nullable=False)
     institution_id: Mapped[int] = mapped_column(ForeignKey("institutions.id"), nullable=False)
     num_arbitrators: Mapped[str] = mapped_column(String(30), nullable=False)  # sole | three | emergency

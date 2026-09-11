@@ -53,7 +53,12 @@ def _eligible_ratings(
 
     if governing_law:
         law_lower = governing_law.lower()
-        domestic_matches = [r for r in ratings if r.seat.country.lower() in law_lower]
+        domestic_matches = [
+            r
+            for r in ratings
+            if r.seat.country.lower() in law_lower
+            or (r.seat.country.lower() == "india" and "indian" in law_lower)
+        ]
         if domestic_matches:
             return domestic_matches
 

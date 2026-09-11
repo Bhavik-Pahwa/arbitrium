@@ -20,14 +20,13 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Upload,
+  X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import './index.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
-const API_ENABLED = import.meta.env.VITE_API_ENABLED === 'true'
-
 type PageKey =
   | 'landing'
   | 'dashboard'
@@ -50,6 +49,12 @@ type SeatResult = {
 }
 
 type ClauseRead = {
+  id?: number
+  title?: string
+  seat_id?: number
+  institution_id?: number
+  num_arbitrators?: string
+  created_at?: string
   generated_text: string
   pathology_check_notes: string[]
 }
@@ -438,19 +443,53 @@ function SeatAllocationPage({ setPage }: { setPage: (key: PageKey) => void }) {
   const [scope, setScope] = useState('Domestic Indian commercial contract with possible Section 9 interim relief needs')
   const [governingLaw, setGoverningLaw] = useState('Indian law')
   const [claimQuantum, setClaimQuantum] = useState(6000000)
+  const [claimCurrency, setClaimCurrency] = useState('INR')
   const [sector, setSector] = useState('General Commercial, Shareholder Agreements, Joint Ventures and M&A')
   const [region, setRegion] = useState('Multi-state / Pan-India Operations')
   const [courtPriority, setCourtPriority] = useState('Extremely high: urgent pre-arbitral interim relief is probable')
+  const [neutrality, setNeutrality] = useState('Strict neutrality required')
+  const [framework, setFramework] = useState('Institutional arbitration')
+  const [arbitratorProfile, setArbitratorProfile] = useState('Senior Advocates and specialist arbitration practitioners')
+  const [hearingNeeds, setHearingNeeds] = useState('Advanced hybrid and virtual capabilities')
+  const [counselBase, setCounselBase] = useState('Distributed across multiple cities')
+  const [assetLocation, setAssetLocation] = useState('India and Singapore')
+  const [preferredInstitution, setPreferredInstitution] = useState('SIAC')
+  const [enforcementNeed, setEnforcementNeed] = useState('High: award enforcement outside the seat is likely')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [results, setResults] = useState<SeatResult[]>(domesticFallbackResults)
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [source, setSource] = useState<'api' | 'local'>('local')
+
+  const choosePath = (nextType: 'domestic' | 'cross_border') => {
+    setArbitrationType(nextType)
+    setResults(nextType === 'domestic' ? domesticFallbackResults : crossBorderFallbackResults)
+    if (nextType === 'domestic') {
+      setScope('Domestic Indian commercial contract with possible Section 9 interim relief needs')
+      setGoverningLaw('Indian law')
+      setClaimCurrency('INR')
+      setRegion('Multi-state / Pan-India Operations')
+      setCourtPriority('Extremely high: urgent pre-arbitral interim relief is probable')
+    } else {
+      setScope('Cross-border commercial contract with India-linked performance and overseas assets')
+      setGoverningLaw('Indian law')
+      setClaimCurrency('USD')
+      setAssetLocation('India and Singapore')
+      setPreferredInstitution('SIAC')
+      setEnforcementNeed('High: award enforcement outside the seat is likely')
+    }
+  }
+
+  const questionnaireSummary = arbitrationType === 'domestic'
+    ? `Sector: ${sector}. Geography: ${region}. Neutrality: ${neutrality}. Court intervention priority: ${courtPriority}. Framework: ${framework}. Arbitrator profile: ${arbitratorProfile}. Hearing needs: ${hearingNeeds}. Counsel base: ${counselBase}.`
+    : `Sector: ${sector}. Asset and performance location: ${assetLocation}. Neutrality: ${neutrality}. Enforcement need: ${enforcementNeed}. Preferred institution: ${preferredInstitution}. Framework: ${framework}. Arbitrator profile: ${arbitratorProfile}. Hearing needs: ${hearingNeeds}.`
+
   const analyze = async (event: FormEvent) => {
     event.preventDefault()
     setLoading(true)
     const normalized = normalizeWeights(weights)
     try {
-      if (!API_ENABLED) throw new Error('local mode')
-      const response = await fetch(`${API_BASE}/api/v1/seat-allocation/analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ arbitration_type: arbitrationType, parties: [{ name: 'Claimant entity', role: 'claimant', jurisdiction: 'India' }, { name: 'Respondent entity', role: 'respondent', jurisdiction: arbitrationType === 'domestic' ? 'India' : 'Singapore' }], scope: `${scope}. Sector: ${sector}. Geography: ${region}. Court intervention priority: ${courtPriority}.`, claim_quantum: claimQuantum, claim_currency: 'USD', governing_law: governingLaw, priority_speed: normalized.speed, priority_cost: normalized.cost, priority_neutrality: normalized.neutrality, priority_enforceability: normalized.enforceability }) })
+      const response = await fetch(`${API_BASE}/api/v1/seat-allocation/analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ arbitration_type: arbitrationType, parties: [{ name: 'Claimant entity', role: 'claimant', jurisdiction: 'India' }, { name: 'Respondent entity', role: 'respondent', jurisdiction: arbitrationType === 'domestic' ? 'India' : 'Singapore' }], scope: `${scope}. ${questionnaireSummary}`, claim_quantum: claimQuantum, claim_currency: claimCurrency, governing_law: governingLaw, priority_speed: normalized.speed, priority_cost: normalized.cost, priority_neutrality: normalized.neutrality, priority_enforceability: normalized.enforceability }) })
       if (!response.ok) throw new Error('analysis failed')
       const data = (await response.json()) as { results: SeatResult[] }
       setResults(data.results)
@@ -462,7 +501,30 @@ function SeatAllocationPage({ setPage }: { setPage: (key: PageKey) => void }) {
       setLoading(false)
     }
   }
-  return <PageWrap eyebrow="Seat Selection" title="Choose a domestic Indian seat with reasons, not habit." description="Questionnaire fields track sector, geography, neutrality, High Court access, infrastructure, counsel base, and claim value."><div className="workflow-grid"><form className="panel" onSubmit={analyze}><div className="panel-heading"><SlidersHorizontal size={20} /><h2>Intake</h2></div><label>Arbitration path<select value={arbitrationType} onChange={(event) => setArbitrationType(event.target.value as 'domestic' | 'cross_border')}><option value="domestic">Domestic arbitration</option><option value="cross_border">Cross-border arbitration</option></select></label><label>Contract scope<textarea value={scope} onChange={(event) => setScope(event.target.value)} /></label><label>Sector<select value={sector} onChange={(event) => setSector(event.target.value)}><option>Construction, Engineering and Infrastructure</option><option>Financial Services, Banking, Securities and Private Equity / VC</option><option>Information Technology, IP, Software and E-Commerce</option><option>Energy, Oil and Gas, Mining and Utilities</option><option>General Commercial, Shareholder Agreements, Joint Ventures and M&A</option></select></label><label>Geographic proximity<select value={region} onChange={(event) => setRegion(event.target.value)}><option>Northern Region</option><option>Western Region</option><option>Southern Region</option><option>Eastern / North-Eastern Region</option><option>Multi-state / Pan-India Operations</option></select></label><label>Court intervention need<select value={courtPriority} onChange={(event) => setCourtPriority(event.target.value)}><option>Extremely high: urgent pre-arbitral interim relief is probable</option><option>Moderate: interim relief may be needed</option><option>Low: primarily monetary or post-completion damages</option></select></label><label>Governing law<input value={governingLaw} onChange={(event) => setGoverningLaw(event.target.value)} /></label><label>Claim quantum, USD<input type="number" value={claimQuantum} min={0} onChange={(event) => setClaimQuantum(Number(event.target.value))} /></label><div className="slider-stack">{Object.entries(weights).map(([key, value]) => <label key={key}><span>{titleCase(key)} {value}%</span><input type="range" min={0} max={100} value={value} onChange={(event) => setWeights({ ...weights, [key]: Number(event.target.value) })} /></label>)}</div><div className="button-row"><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <Scale size={16} />}Run allocation</button><button className="secondary-button" type="button"><Upload size={16} />Upload contract</button></div><p className="fine-print">Connection: {source === 'api' ? 'live backend' : 'local reference data'}</p></form><aside className="guidance-stack"><Panel title="Domestic arbitration" icon={<Home size={18} />}><p className="muted">For India-seated disputes, the juridical seat anchors supervisory High Court jurisdiction for interim relief, appointments, and set-aside challenges.</p></Panel><Panel title="Institutional fit" icon={<Gavel size={18} />}><p className="muted">For domestic commercial matters, MCIA and Delhi DIAC lead the shortlist; ICA remains sector-useful and IIAC is the statutory option.</p></Panel></aside></div><ResultList results={results} setPage={setPage} /></PageWrap>
+
+  const uploadContract = async (file: File | null) => {
+    if (!file) return
+    setUploading(true)
+    try {
+      const body = new FormData()
+      body.append('file', file)
+      const response = await fetch(`${API_BASE}/api/v1/seat-allocation/upload-contract`, { method: 'POST', body })
+      if (!response.ok) throw new Error('upload failed')
+      const upload = await response.json() as { extracted_scope?: string | null; extracted_claim_quantum?: number | null; extracted_claim_currency?: string | null; extracted_governing_law?: string | null }
+      if (upload.extracted_scope) setScope(upload.extracted_scope)
+      if (upload.extracted_claim_quantum) setClaimQuantum(upload.extracted_claim_quantum)
+      if (upload.extracted_claim_currency) setClaimCurrency(upload.extracted_claim_currency)
+      if (upload.extracted_governing_law) setGoverningLaw(upload.extracted_governing_law)
+      setSource('api')
+    } catch {
+      setSource('local')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  return <PageWrap eyebrow="Seat Selection" title={arbitrationType === 'domestic' ? 'Choose a domestic Indian seat with reasons, not habit.' : 'Choose an international seat with enforcement in view.'} description={arbitrationType === 'domestic' ? 'Domestic questions focus on Indian supervisory courts, regional proximity, institution format, hearing infrastructure, counsel base, and claim value.' : 'International questions focus on neutrality, asset location, enforcement, institutional fit, hearing model, governing law, and claim value.'}><div className="workflow-grid"><form className="panel" onSubmit={analyze}><div className="panel-heading"><SlidersHorizontal size={20} /><h2>Intake</h2></div><label>Contract scope<textarea value={scope} onChange={(event) => setScope(event.target.value)} /></label><label>Sector<select value={sector} onChange={(event) => setSector(event.target.value)}><option>Construction, Engineering and Infrastructure</option><option>Financial Services, Banking, Securities and Private Equity / VC</option><option>Information Technology, IP, Software and E-Commerce</option><option>Energy, Oil and Gas, Mining and Utilities</option><option>General Commercial, Shareholder Agreements, Joint Ventures and M&A</option></select></label>{arbitrationType === 'domestic' ? <><label>Geographic proximity<select value={region} onChange={(event) => setRegion(event.target.value)}><option>Northern Region</option><option>Western Region</option><option>Southern Region</option><option>Eastern / North-Eastern Region</option><option>Multi-state / Pan-India Operations</option></select></label><label>Neutrality preference<select value={neutrality} onChange={(event) => setNeutrality(event.target.value)}><option>Strict neutrality required</option><option>Open to either party's principal location</option><option>Neutrality is secondary to legal ecosystem quality</option></select></label><label>Court intervention need<select value={courtPriority} onChange={(event) => setCourtPriority(event.target.value)}><option>Extremely high: urgent pre-arbitral interim relief is probable</option><option>Moderate: interim relief may be needed</option><option>Low: primarily monetary or post-completion damages</option></select></label><label>Arbitral framework<select value={framework} onChange={(event) => setFramework(event.target.value)}><option>Institutional arbitration</option><option>Ad hoc arbitration with admin or hearing support</option><option>Pure ad hoc arbitration</option></select></label><label>Arbitrator profile<select value={arbitratorProfile} onChange={(event) => setArbitratorProfile(event.target.value)}><option>Former Supreme Court or High Court judges</option><option>Senior Advocates and specialist arbitration practitioners</option><option>Technical or industry domain experts</option><option>Hybrid tribunal with legal and technical members</option></select></label><label>Hearing infrastructure<select value={hearingNeeds} onChange={(event) => setHearingNeeds(event.target.value)}><option>Advanced hybrid and virtual capabilities</option><option>Real-time stenography and live transcription</option><option>Multi-room breakout facilities</option><option>Standard conference room facilities</option></select></label><label>Counsel base<select value={counselBase} onChange={(event) => setCounselBase(event.target.value)}><option>Delhi NCR</option><option>Mumbai</option><option>Bengaluru / Southern tech hubs</option><option>Distributed across multiple cities</option></select></label></> : <><label>Asset and performance location<input value={assetLocation} onChange={(event) => setAssetLocation(event.target.value)} /></label><label>Neutrality preference<select value={neutrality} onChange={(event) => setNeutrality(event.target.value)}><option>Strictly neutral third-country seat</option><option>Seat near claimant or respondent is acceptable</option><option>Neutrality is secondary to enforcement and institution fit</option></select></label><label>Enforcement need<select value={enforcementNeed} onChange={(event) => setEnforcementNeed(event.target.value)}><option>High: award enforcement outside the seat is likely</option><option>Moderate: enforcement risk depends on assets at award stage</option><option>Low: voluntary compliance or local assets expected</option></select></label><label>Preferred institution<select value={preferredInstitution} onChange={(event) => setPreferredInstitution(event.target.value)}><option>SIAC</option><option>LCIA</option><option>HKIAC</option><option>ICDR</option><option>ICC</option><option>UNCITRAL / ad hoc</option></select></label><label>Arbitral framework<select value={framework} onChange={(event) => setFramework(event.target.value)}><option>Institutional arbitration</option><option>Administered UNCITRAL arbitration</option><option>Pure ad hoc arbitration</option></select></label><label>Arbitrator profile<select value={arbitratorProfile} onChange={(event) => setArbitratorProfile(event.target.value)}><option>International arbitration practitioners</option><option>Former judges</option><option>Technical or industry domain experts</option><option>Hybrid tribunal with legal and technical members</option></select></label><label>Hearing model<select value={hearingNeeds} onChange={(event) => setHearingNeeds(event.target.value)}><option>Advanced hybrid and virtual capabilities</option><option>In-person hearings at the seat</option><option>Tribunal-determined venue</option><option>Document-heavy process with limited hearings</option></select></label></>}<label>Governing law<input value={governingLaw} onChange={(event) => setGoverningLaw(event.target.value)} /></label><div className="inline-fields"><label>Claim quantum<input type="number" value={claimQuantum} min={0} onChange={(event) => setClaimQuantum(Number(event.target.value))} /></label><label>Currency<input value={claimCurrency} onChange={(event) => setClaimCurrency(event.target.value.toUpperCase())} /></label></div><div className="slider-stack">{Object.entries(weights).map(([key, value]) => <label key={key}><span>{titleCase(key)} {value}%</span><input type="range" min={0} max={100} value={value} onChange={(event) => setWeights({ ...weights, [key]: Number(event.target.value) })} /></label>)}</div><div className="button-row"><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <Scale size={16} />}Run allocation</button><button className="secondary-button" disabled={uploading} type="button" onClick={() => fileInputRef.current?.click()}>{uploading ? <Loader2 className="spin" size={16} /> : <Upload size={16} />}Upload contract</button><input ref={fileInputRef} className="sr-only" type="file" accept=".pdf,.docx" onChange={(event) => void uploadContract(event.target.files?.[0] ?? null)} /></div><p className="fine-print">Connection: {source === 'api' ? 'live backend' : 'local reference data'}</p></form><aside className="guidance-stack" role="radiogroup" aria-label="Arbitration path"><button className={arbitrationType === 'domestic' ? 'path-choice active' : 'path-choice'} type="button" role="radio" aria-checked={arbitrationType === 'domestic'} onClick={() => choosePath('domestic')}><Home size={18} /><span><strong>Domestic arbitration</strong><small>High Court supervision, regional seat fit, and Indian institution choice.</small></span></button><button className={arbitrationType === 'cross_border' ? 'path-choice active' : 'path-choice'} type="button" role="radio" aria-checked={arbitrationType === 'cross_border'} onClick={() => choosePath('cross_border')}><Gavel size={18} /><span><strong>International arbitration</strong><small>Neutral seat, cross-border institution, and award enforcement.</small></span></button><Panel title={arbitrationType === 'domestic' ? 'Domestic questionnaire' : 'International questionnaire'} icon={<ClipboardCheck size={18} />}><StatusList items={(arbitrationType === 'domestic' ? [['Sector and dispute nature', sector, 'ready'], ['Geographic proximity', region, 'ready'], ['Urgent court intervention', courtPriority, 'ready'], ['Framework format', framework, 'ready']] : [['Sector and dispute nature', sector, 'ready'], ['Asset and performance location', assetLocation, 'ready'], ['Enforcement need', enforcementNeed, 'ready'], ['Preferred institution', preferredInstitution, 'ready']]) as [string, string, string][]} /></Panel></aside></div><ResultList results={results} setPage={setPage} /></PageWrap>
 }
 
 function ResultList({ results, setPage }: { results: SeatResult[]; setPage: (key: PageKey) => void }) {
@@ -480,22 +542,57 @@ function ClausePage() {
   const [institutionId, setInstitutionId] = useState(6)
   const [arbitrators, setArbitrators] = useState<'sole' | 'three' | 'emergency'>('sole')
   const [clause, setClause] = useState<ClauseRead | null>(null)
+  const [history, setHistory] = useState<ClauseRead[]>([])
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const loadHistory = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/clauses`)
+      if (!response.ok) throw new Error('history failed')
+      setHistory((await response.json()) as ClauseRead[])
+    } catch {
+      setHistory([])
+    }
+  }
+  useEffect(() => {
+    void loadHistory()
+  }, [])
+  const openHistoryClause = async (item: ClauseRead) => {
+    if (!item.id) {
+      setClause(item)
+      setHistoryOpen(false)
+      return
+    }
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/clauses/${item.id}`)
+      if (!response.ok) throw new Error('clause lookup failed')
+      const selected = await response.json() as ClauseRead
+      setClause(selected)
+      if (selected.seat_id) setSeatId(selected.seat_id)
+      if (selected.institution_id) setInstitutionId(selected.institution_id)
+      if (selected.num_arbitrators === 'sole' || selected.num_arbitrators === 'three' || selected.num_arbitrators === 'emergency') setArbitrators(selected.num_arbitrators)
+      setHistoryOpen(false)
+    } catch {
+      setClause(item)
+      setHistoryOpen(false)
+    }
+  }
   const generate = async (event: FormEvent) => {
     event.preventDefault()
     setLoading(true)
     try {
-      if (!API_ENABLED) throw new Error('local mode')
       const response = await fetch(`${API_BASE}/api/v1/clauses/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seat_id: seatId, institution_id: institutionId, num_arbitrators: arbitrators, appointment_mechanism: arbitrators === 'three' ? 'co_arbitrator_nomination' : 'institutional_default', language: 'English', governing_law_contract: 'Indian law', governing_law_arbitration: 'Indian law', party_details: [{ name: 'Claimant entity', role: 'claimant', jurisdiction: 'India' }, { name: 'Respondent entity', role: 'respondent', jurisdiction: 'India' }] }) })
       if (!response.ok) throw new Error('clause failed')
-      setClause((await response.json()) as ClauseRead)
+      const nextClause = await response.json() as ClauseRead
+      setClause(nextClause)
+      await loadHistory()
     } catch {
       setClause({ generated_text: 'Any dispute arising out of or in connection with this agreement shall be referred to and finally resolved by arbitration administered by the selected Indian institution in accordance with its arbitration rules. The seat of arbitration shall be the selected Indian seat. The tribunal shall consist of the selected number of arbitrators. The language of the arbitration shall be English.', pathology_check_notes: ['Local reference wording is shown because the live API is not connected in this session.', 'Confirm the institution name, seat, venue, governing law, tribunal size, and language before client use.'] })
     } finally {
       setLoading(false)
     }
   }
-  return <PageWrap eyebrow="Clause Drafting" title="Draft the arbitration agreement with risk notes visible." description="Recommended seat data and manual settings flow into clause text with legal review notes attached."><div className="workflow-grid"><form className="panel" onSubmit={generate}><div className="panel-heading"><FileText size={20} /><h2>Clause settings</h2></div><label>Selected seat<select value={seatId} onChange={(event) => setSeatId(Number(event.target.value))}>{seats.map((seat) => <option key={seat.id} value={seat.id}>{seat.name}</option>)}</select></label><label>Institution<select value={institutionId} onChange={(event) => setInstitutionId(Number(event.target.value))}>{institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.short_code}</option>)}</select></label><label>Tribunal<select value={arbitrators} onChange={(event) => setArbitrators(event.target.value as 'sole' | 'three' | 'emergency')}><option value="sole">Sole arbitrator</option><option value="three">Three-member tribunal</option><option value="emergency">Emergency provisions</option></select></label><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <FileText size={16} />}Generate clause</button></form><Panel title="Generated clause" icon={<Copy size={20} />}>{clause ? <><blockquote className="clause-output">{clause.generated_text}</blockquote><StatusList items={clause.pathology_check_notes.map((note) => [note, 'Legal review required before use', note.toLowerCase().includes('local reference') ? 'warn' : 'ready'])} /></> : <p className="empty-state">No clause generated yet.</p>}</Panel></div></PageWrap>
+  return <PageWrap eyebrow="Clause Drafting" title="Draft the arbitration agreement with risk notes visible." description="Recommended seat data and manual settings flow into clause text with legal review notes attached."><div className="workflow-grid"><form className="panel" onSubmit={generate}><div className="panel-heading"><FileText size={20} /><h2>Clause settings</h2></div><label>Selected seat<select value={seatId} onChange={(event) => setSeatId(Number(event.target.value))}>{seats.map((seat) => <option key={seat.id} value={seat.id}>{seat.name}</option>)}</select></label><label>Institution<select value={institutionId} onChange={(event) => setInstitutionId(Number(event.target.value))}>{institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.short_code}</option>)}</select></label><label>Tribunal<select value={arbitrators} onChange={(event) => setArbitrators(event.target.value as 'sole' | 'three' | 'emergency')}><option value="sole">Sole arbitrator</option><option value="three">Three-member tribunal</option><option value="emergency">Emergency provisions</option></select></label><button className="primary-button" disabled={loading} type="submit">{loading ? <Loader2 className="spin" size={16} /> : <FileText size={16} />}Generate clause</button></form><div className="clause-result-stack"><div className="history-action-row"><button className="secondary-button" type="button" onClick={() => { void loadHistory(); setHistoryOpen(true) }}><BookOpenCheck size={16} />View history</button></div><Panel title="Generated clause" icon={<Copy size={20} />}>{clause ? <><blockquote className="clause-output">{clause.generated_text}</blockquote><StatusList items={clause.pathology_check_notes.map((note) => [note, 'Legal review required before use', note.toLowerCase().includes('local reference') ? 'warn' : 'ready'])} /></> : <p className="empty-state">No clause generated yet.</p>}</Panel></div></div>{historyOpen && <div className="floating-history" role="dialog" aria-modal="true" aria-label="Clause history"><div className="floating-history-head"><div><p className="eyebrow">Clause history</p><h2>Generated clauses</h2></div><button className="icon-button" type="button" aria-label="Close history" onClick={() => setHistoryOpen(false)}><X size={18} /></button></div><div className="history-list">{history.length > 0 ? history.map((item) => <button className={clause?.id === item.id ? 'history-item active' : 'history-item'} type="button" key={item.id ?? item.generated_text.slice(0, 24)} onClick={() => void openHistoryClause(item)}><strong>{item.title ?? 'Generated arbitration clause'}</strong><small>{item.created_at ? new Date(item.created_at).toLocaleString() : 'Local draft'}</small></button>) : <p className="empty-state">No generated clauses in history yet.</p>}</div></div>}</PageWrap>
 }
 
 function CostPage() {
@@ -507,7 +604,6 @@ function CostPage() {
     event.preventDefault()
     setLoading(true)
     try {
-      if (!API_ENABLED) throw new Error('local mode')
       const response = await fetch(`${API_BASE}/api/v1/cost-estimate/calculate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ institution_id: institutionId, claim_amount: claimAmount, currency: 'USD' }) })
       if (!response.ok) throw new Error('cost failed')
       setEstimate((await response.json()) as CostEstimateRead)

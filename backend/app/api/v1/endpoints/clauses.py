@@ -9,6 +9,15 @@ from app.services import clause_generator
 router = APIRouter(prefix="/clauses", tags=["clauses"])
 
 
+def _history_title(seat: Seat, institution: Institution, num_arbitrators: str) -> str:
+    tribunal_label = {
+        "sole": "sole arbitrator",
+        "three": "three-member tribunal",
+        "emergency": "emergency provisions",
+    }.get(num_arbitrators, num_arbitrators)
+    return f"{seat.name} + {institution.short_code}, {tribunal_label}"
+
+
 @router.post("/generate", response_model=ClauseRead)
 def generate_clause(
     payload: ClauseGenerateRequest,
@@ -34,6 +43,7 @@ def generate_clause(
     clause = Clause(
         user_id=current_user.id if current_user else None,
         source_seat_allocation_result_id=payload.source_seat_allocation_result_id,
+        title=_history_title(seat, institution, payload.num_arbitrators),
         seat_id=seat.id,
         institution_id=institution.id,
         num_arbitrators=payload.num_arbitrators,
@@ -64,11 +74,9 @@ def list_clauses(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_current_user_optional),
 ):
-    if not current_user:
-        return []
-    return (
-        db.query(Clause)
-        .filter(Clause.user_id == current_user.id)
-        .order_by(Clause.created_at.desc())
-        .all()
-    )
+    query = db.query(Clause)
+    if current_user:
+        query = query.filter(Clause.user_id == current_user.id)
+    else:
+        query = query.filter(Clause.user_id.is_(None))
+    return query.order_by(Clause.created_at.desc()).all()
