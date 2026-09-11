@@ -63,6 +63,22 @@ SEATS = [
         "notes": "Common choice for cross-border disputes with US-connected parties or assets.",
     },
     {
+        "name": "Paris, France",
+        "country": "France",
+        "ny_convention_member": True,
+        "supervisory_court": "Paris Court of Appeal",
+        "governing_statute": "French Code of Civil Procedure, Book IV",
+        "notes": "Long-standing international arbitration seat with strong ICC alignment.",
+    },
+    {
+        "name": "The Hague, Netherlands",
+        "country": "Netherlands",
+        "ny_convention_member": True,
+        "supervisory_court": "Dutch courts at the seat",
+        "governing_statute": "Dutch Code of Civil Procedure, Book 4",
+        "notes": "Useful for State, State-owned entity, treaty, and public-international dimensions.",
+    },
+    {
         "name": "Mumbai, India",
         "country": "India",
         "ny_convention_member": True,
@@ -98,6 +114,18 @@ INSTITUTIONS = [
         "name": "International Centre for Dispute Resolution (AAA)",
         "website_url": "https://www.icdr.org/",
         "home_seat_name": "New York, USA",
+    },
+    {
+        "short_code": "ICC",
+        "name": "International Chamber of Commerce",
+        "website_url": "https://iccwbo.org/dispute-resolution/",
+        "home_seat_name": "Paris, France",
+    },
+    {
+        "short_code": "PCA",
+        "name": "Permanent Court of Arbitration",
+        "website_url": "https://pca-cpa.org/",
+        "home_seat_name": "The Hague, Netherlands",
     },
     {
         "short_code": "SIAC",
@@ -175,6 +203,20 @@ INSTITUTION_RULES = [
         "version_year": 2025,
         "source_url": "https://siac.org.sg/siac-rules-2025",
         "summary": "SIAC's current administered-arbitration rules, effective 2025.",
+    },
+    {
+        "institution_short_code": "ICC",
+        "rules_name": "ICC Arbitration Rules",
+        "version_year": 2021,
+        "source_url": "https://iccwbo.org/dispute-resolution/dispute-resolution-services/arbitration/rules-procedure/",
+        "summary": "Global administered-arbitration rules used for high-value and multi-jurisdiction disputes.",
+    },
+    {
+        "institution_short_code": "PCA",
+        "rules_name": "PCA Arbitration Rules",
+        "version_year": 2012,
+        "source_url": "https://pca-cpa.org/en/services/arbitration-services/pca-arbitration-rules-2012/",
+        "summary": "Arbitration rules suited to State, intergovernmental, and public-international matters.",
     },
     {
         "institution_short_code": "MCIA",
@@ -306,6 +348,26 @@ FEE_SCHEDULES = [
         "source_url": "https://siac.org.sg/siac-rules-2025",
     },
     {
+        "institution_short_code": "ICC",
+        "schedule_name": "ICC Illustrative Fee Schedule (placeholder)",
+        "currency": "USD",
+        "admin_fee_tiers": _tiers(1.25, 1.2, admin=True),
+        "tribunal_fee_tiers": _tiers(1.25, 1.2, admin=False),
+        "typical_duration_months_min": 16,
+        "typical_duration_months_max": 30,
+        "source_url": "https://iccwbo.org/dispute-resolution/dispute-resolution-services/arbitration/costs-and-payments/cost-calculator/",
+    },
+    {
+        "institution_short_code": "PCA",
+        "schedule_name": "PCA Illustrative Fee Schedule (placeholder)",
+        "currency": "USD",
+        "admin_fee_tiers": _tiers(0.9, 0.95, admin=True),
+        "tribunal_fee_tiers": _tiers(0.9, 0.95, admin=False),
+        "typical_duration_months_min": 14,
+        "typical_duration_months_max": 28,
+        "source_url": "https://pca-cpa.org/en/fees-and-costs/",
+    },
+    {
         "institution_short_code": "MCIA",
         "schedule_name": "MCIA Illustrative Fee Schedule (placeholder)",
         "currency": "USD",
@@ -378,6 +440,16 @@ SEAT_INSTITUTION_RATINGS = [
         "New York, USA", "ICDR", 3, 3, 4, 5,
         "Preferred where US-connected assets or parties are involved; proceedings can "
         "run longer due to broader discovery norms.",
+    ),
+    (
+        "Paris, France", "ICC", 3, 3, 5, 5,
+        "Global institution with broad cross-border acceptance and a Paris seat that is "
+        "well suited to high-value, multi-jurisdiction disputes.",
+    ),
+    (
+        "The Hague, Netherlands", "PCA", 3, 4, 5, 5,
+        "Strong fit where a State, State-owned entity, treaty, or public-international "
+        "dimension makes institutional neutrality especially important.",
     ),
     (
         "Mumbai, India", "MCIA", 3, 5, 3, 3,

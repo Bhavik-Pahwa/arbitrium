@@ -47,11 +47,19 @@ class SeatAllocationResultRead(BaseModel):
     rank: int
     seat_id: int
     institution_id: int
+    seat_name: str | None = None
+    seat_country: str | None = None
+    institution_short_code: str | None = None
+    institution_name: str | None = None
     score: float
     rationale: str
     pros: list[str]
     cons: list[str]
     citations: list[dict]
+    factor_scores: list[dict] = []
+    priority_factors: list[str] = []
+    seat_reasons: list[str] = []
+    better_if: str | None = None
 
 
 class SeatAllocationResponse(BaseModel):

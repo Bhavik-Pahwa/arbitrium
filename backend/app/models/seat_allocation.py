@@ -41,7 +41,27 @@ class SeatAllocationResult(Base):
     pros: Mapped[list] = mapped_column(JSON, nullable=False)
     cons: Mapped[list] = mapped_column(JSON, nullable=False)
     citations: Mapped[list] = mapped_column(JSON, nullable=False)
+    factor_scores: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    priority_factors: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    seat_reasons: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    better_if: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     request = relationship("SeatAllocationRequest", back_populates="results")
     seat = relationship("Seat")
     institution = relationship("Institution")
+
+    @property
+    def seat_name(self) -> str:
+        return self.seat.name
+
+    @property
+    def seat_country(self) -> str:
+        return self.seat.country
+
+    @property
+    def institution_short_code(self) -> str:
+        return self.institution.short_code
+
+    @property
+    def institution_name(self) -> str:
+        return self.institution.name

@@ -72,9 +72,23 @@ def analyze(
         "priority_neutrality": payload.priority_neutrality,
         "priority_enforceability": payload.priority_enforceability,
     }
+    party_jurisdictions = "; ".join(
+        sorted({p.jurisdiction for p in payload.parties if p.jurisdiction})
+    )
+    recommendation_context = " ".join(
+        item
+        for item in (
+            payload.scope or "",
+            f"Party jurisdictions: {party_jurisdictions}." if party_jurisdictions else "",
+            f"Governing law: {payload.governing_law}." if payload.governing_law else "",
+            f"Claim currency: {payload.claim_currency}." if payload.claim_currency else "",
+            f"Claim quantum: {payload.claim_quantum}." if payload.claim_quantum else "",
+        )
+        if item
+    )
 
     candidates = recommendation_engine.recommend(
-        db, payload.arbitration_type, payload.governing_law, weights
+        db, payload.arbitration_type, payload.governing_law, weights, context=recommendation_context
     )
     if not candidates:
         raise HTTPException(status_code=422, detail="No eligible seats found for the supplied inputs")
@@ -105,6 +119,10 @@ def analyze(
                 pros=candidate.pros,
                 cons=candidate.cons,
                 citations=candidate.citations,
+                factor_scores=candidate.factor_scores,
+                priority_factors=candidate.priority_factors,
+                seat_reasons=candidate.seat_reasons,
+                better_if=candidate.better_if,
             )
         )
     db.commit()

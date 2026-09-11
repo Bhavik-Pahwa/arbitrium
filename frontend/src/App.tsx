@@ -41,11 +41,19 @@ type SeatResult = {
   rank: number
   seat_id: number
   institution_id: number
+  seat_name?: string
+  seat_country?: string
+  institution_short_code?: string
+  institution_name?: string
   score: number
   rationale: string
   pros: string[]
   cons: string[]
   citations: { label?: string; source_url?: string; url?: string }[]
+  factor_scores?: { label: string; score: number }[]
+  priority_factors?: string[]
+  seat_reasons?: string[]
+  better_if?: string | null
 }
 
 type ClauseRead = {
@@ -82,6 +90,8 @@ const seats = [
   { id: 2, name: 'Singapore', country: 'Singapore' },
   { id: 3, name: 'Hong Kong SAR', country: 'Hong Kong SAR, China' },
   { id: 4, name: 'New York, USA', country: 'United States' },
+  { id: 7, name: 'Paris, France', country: 'France' },
+  { id: 8, name: 'The Hague, Netherlands', country: 'Netherlands' },
   { id: 5, name: 'Mumbai, India', country: 'India' },
   { id: 6, name: 'New Delhi, India', country: 'India' },
 ]
@@ -91,6 +101,8 @@ const institutions = [
   { id: 2, short_code: 'HKIAC', name: 'Hong Kong International Arbitration Centre', website_url: 'https://hkiac.org/' },
   { id: 3, short_code: 'ICDR', name: 'International Centre for Dispute Resolution', website_url: 'https://www.icdr.org/' },
   { id: 4, short_code: 'SIAC', name: 'Singapore International Arbitration Centre', website_url: 'https://siac.org.sg/' },
+  { id: 10, short_code: 'ICC', name: 'International Chamber of Commerce', website_url: 'https://iccwbo.org/dispute-resolution/' },
+  { id: 11, short_code: 'PCA', name: 'Permanent Court of Arbitration', website_url: 'https://pca-cpa.org/' },
   { id: 5, short_code: 'MCIA', name: 'Mumbai Centre for International Arbitration', website_url: 'https://mcia.org.in/' },
   { id: 6, short_code: 'DIAC-DELHI', name: 'Delhi International Arbitration Centre', website_url: 'https://dhcdiac.nic.in/' },
   { id: 7, short_code: 'ICA', name: 'Indian Council of Arbitration', website_url: 'https://www.icaindia.co.in/' },
@@ -528,7 +540,23 @@ function SeatAllocationPage({ setPage }: { setPage: (key: PageKey) => void }) {
 }
 
 function ResultList({ results, setPage }: { results: SeatResult[]; setPage: (key: PageKey) => void }) {
-  return <section className="results-list" aria-label="Seat allocation results">{results.map((result) => { const seat = seats.find((item) => item.id === result.seat_id); const institution = institutions.find((item) => item.id === result.institution_id); return <article className="result-card" key={`${result.rank}-${result.seat_id}`}><div className="rank">#{result.rank}</div><div><h3>{seat?.name ?? 'Recommended seat'} + {institution?.short_code ?? 'Institution'}</h3><p>{result.rationale}</p><div className="pros-cons"><div><strong>Pros</strong><ul>{result.pros.map((item) => <li key={item}>{item}</li>)}</ul></div><div><strong>Cons</strong><ul>{result.cons.map((item) => <li key={item}>{item}</li>)}</ul></div></div><div className="citation-row">{result.citations.map((citation) => <a key={citation.source_url ?? citation.url} href={citation.source_url ?? citation.url} target="_blank" rel="noreferrer"><LinkIcon size={14} />{citation.label ?? 'Source'}</a>)}</div></div><div className="score-block"><span>Score</span><strong>{result.score.toFixed(1)}</strong><button className="secondary-button" type="button" onClick={() => setPage('clause-generation')}>Use in clause</button></div></article> })}</section>
+  if (results.length === 0) return null
+  const [top, ...alternatives] = results
+  const seat = seats.find((item) => item.id === top.seat_id)
+  const institution = institutions.find((item) => item.id === top.institution_id)
+  const seatName = top.seat_name ?? seat?.name ?? 'Recommended seat'
+  const institutionCode = top.institution_short_code ?? institution?.short_code ?? 'Institution'
+  const institutionName = top.institution_name ?? institution?.name ?? 'Recommended institution'
+  const scorePercent = Math.round((top.score <= 1 ? top.score : top.score / 5) * 100)
+  const factors = top.factor_scores?.length ? top.factor_scores : [
+    { label: 'Speed', score: top.pros.some((item) => item.toLowerCase().includes('speed')) ? 8 : 6 },
+    { label: 'Cost efficiency', score: top.pros.some((item) => item.toLowerCase().includes('cost')) ? 8 : 6 },
+    { label: 'Neutrality', score: top.pros.some((item) => item.toLowerCase().includes('neutrality')) ? 9 : 6 },
+    { label: 'Enforceability', score: top.pros.some((item) => item.toLowerCase().includes('enforceability')) ? 9 : 6 },
+  ]
+  const priorities = new Set(top.priority_factors ?? [])
+  const seatReasons = top.seat_reasons?.length ? top.seat_reasons : ['The seat and institution fit the facts and priorities entered in the questionnaire.', 'Confirm court support, enforcement path, and fee exposure before final drafting.']
+  return <section className="seat-decision" aria-label="Seat allocation results"><article className="recommendation-hero"><div><p className="eyebrow">Recommended institution</p><h2>{institutionCode}</h2><p>{institutionName}</p></div><div className="hero-seat"><p className="eyebrow">Recommended seat</p><h3>{seatName}</h3><strong>{scorePercent}%</strong></div><div className="factor-profile"><div className="factor-legend"><span><i className="priority-dot" />Your priority</span><span><i />Other factors</span></div>{factors.map((factor) => <div className="factor-row" key={factor.label}><span>{factor.label}{priorities.has(factor.label) && <em>Your priority</em>}</span><div className="factor-track"><b style={{ width: `${Math.min(100, factor.score * 10)}%` }} /></div><strong>{factor.score.toFixed(1)}</strong></div>)}</div></article><article className="reason-card"><div className="section-kicker"><AlertCircle size={18} /><span>Why this recommendation</span></div><p>{top.rationale}</p></article><div className="pros-cons refined"><Panel title="Advantages" icon={<CheckCircle2 size={18} />}><ul>{top.pros.map((item) => <li key={item}>{item}</li>)}</ul></Panel><Panel title="Trade-offs to weigh" icon={<AlertCircle size={18} />}><ul>{top.cons.length > 0 ? top.cons.map((item) => <li key={item}>{item}</li>) : <li>No major low-scoring factor surfaced from the current weights.</li>}</ul></Panel></div><article className="seat-reasons-card"><p className="eyebrow">Why {seatName} as the seat</p><h3>{seatName}</h3><div>{seatReasons.map((item) => <span key={item}>{item}</span>)}</div></article>{alternatives.length > 0 && <section className="alternatives"><div><h2>Alternatives worth considering</h2><p>Strong second choices, and exactly when each becomes the better call.</p></div><div className="alternative-grid">{alternatives.map((result) => { const altSeat = seats.find((item) => item.id === result.seat_id); const altInstitution = institutions.find((item) => item.id === result.institution_id); return <article className="alternative-card" key={`${result.rank}-${result.seat_id}-${result.institution_id}`}><div><h3>{result.institution_short_code ?? altInstitution?.short_code ?? 'Institution'}</h3><span>{result.seat_name ?? altSeat?.name ?? 'Seat'}</span></div><p>{result.institution_name ?? altInstitution?.name ?? 'Recommended institution'}</p><p><strong>Better if:</strong> {result.better_if ?? result.rationale}</p><button className="secondary-button" type="button" onClick={() => setPage('clause-generation')}>Use in clause</button></article> })}</div></section>}<div className="citation-row">{top.citations.map((citation) => <a key={citation.source_url ?? citation.url} href={citation.source_url ?? citation.url} target="_blank" rel="noreferrer"><LinkIcon size={14} />{citation.label ?? 'Source'}</a>)}</div></section>
 }
 
 function RulesPage() {
