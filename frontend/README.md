@@ -1,18 +1,36 @@
 # Arbitrium Frontend
 
-React + TypeScript + Tailwind prototype for Arbitrium.
+React + TypeScript + Vite frontend for Arbitrium.
 
-```bash
-npm install
-npm run dev
-```
-
-Open `http://127.0.0.1:5173/`.
-
-By default the app runs in quiet demo mode so it works without the FastAPI backend. To call the backend, start the API on `http://localhost:8000` and run:
+## Setup
 
 ```powershell
-$env:VITE_API_ENABLED="true"
-$env:VITE_API_BASE_URL="http://localhost:8000"
-npm run dev
+npm install
+```
+
+## Run
+
+```powershell
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Open:
+
+```text
+http://127.0.0.1:5173/
+```
+
+The frontend calls the backend at `http://localhost:8000` by default.
+
+To use a different backend URL:
+
+```powershell
+$env:VITE_API_BASE_URL="http://127.0.0.1:8000"
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+## Build
+
+```powershell
+npm run build
 ```

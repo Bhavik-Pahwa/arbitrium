@@ -1,68 +1,113 @@
-# Arbitrium — Backend
+# Arbitrium Backend
 
-FastAPI + PostgreSQL backend implementing Iteration 1 of the Arbitrium PRD
-(`../docs/project/product-requirements.md`). This pass covers the **backend only** — see
-`../docs/project/implementation-checklist.md` for full scope/status and known gaps (frontend, live
-rule-refresh job, replacing placeholder fee/annual-report figures with
-verified numbers).
+FastAPI + PostgreSQL backend for Arbitrium.
 
-## Data honesty note
+## Requirements
 
-`app/seed/reference_data.py` seeds structural data (seats, institutions,
-the PRD's cited rule/annual-report source URLs) plus **illustrative,
-explicitly `verified=False`** fee schedules and qualitative recommendation
-ratings. No case-count/fee/duration figures were fabricated as if real —
-read that file's docstring before treating any seeded number as fact.
+- Python 3.10 or 3.11
+- PostgreSQL 15 or newer
+- `DATABASE_URL` and `SECRET_KEY` configured in `.env`
 
-## Setup
+## 1. Create the Virtual Environment
 
-```bash
-cd backend
-py -3.10 -m venv .venv  # Windows; use a Python 3.10/3.11 interpreter on macOS/Linux
-. .venv/Scripts/activate   # Windows; use `source .venv/bin/activate` on macOS/Linux
+From the `backend/` folder:
+
+```powershell
+py -3.10 -m venv .venv
+.\.venv\Scripts\activate
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-cp .env.example .env       # then edit DATABASE_URL / SECRET_KEY
 ```
 
-Requires a running PostgreSQL instance matching `DATABASE_URL` in `.env`.
+If `py -3.10` is not available, use your installed Python 3.10 or 3.11 executable directly:
 
-## Database
-
-```bash
-alembic upgrade head        # create schema
-python -m app.seed.seed_db  # load seed reference data (idempotent)
+```powershell
+"C:\Path\To\Python310\python.exe" -m venv .venv
 ```
 
-## Run
+## 2. Create `.env`
 
-```bash
-uvicorn app.main:app --reload
+```powershell
+copy .env.example .env
 ```
 
-API docs at `http://localhost:8000/docs`. Health check at `/health`.
+Generate a secret key:
 
-## Test
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
 
-```bash
+Paste it into `SECRET_KEY` in `backend/.env`.
+
+Default local `.env` shape:
+
+```env
+DATABASE_URL=postgresql+psycopg2://arbitrium:arbitrium@localhost:5432/arbitrium
+SECRET_KEY=<paste-generated-secret-here>
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+UPLOAD_DIR=./uploads
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000
+```
+
+## 3. Start PostgreSQL
+
+The default `DATABASE_URL` expects a database named `arbitrium`, user `arbitrium`, and password `arbitrium`.
+
+Docker option:
+
+```powershell
+docker run --name arbitrium-postgres `
+  -e POSTGRES_USER=arbitrium `
+  -e POSTGRES_PASSWORD=arbitrium `
+  -e POSTGRES_DB=arbitrium `
+  -p 5432:5432 `
+  -d postgres:16
+```
+
+If the container already exists:
+
+```powershell
+docker start arbitrium-postgres
+```
+
+## 4. Apply Migrations and Seed Data
+
+```powershell
+alembic upgrade head
+python -m app.seed.seed_db
+```
+
+The seed command is idempotent. It loads seats, institutions, rule links, fee placeholders, and recommendation ratings.
+
+## 5. Run the API
+
+```powershell
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Verify:
+
+- `http://127.0.0.1:8000/health`
+- `http://127.0.0.1:8000/docs`
+
+## 6. Run Tests
+
+```powershell
 pytest
 ```
 
-Tests cover pure service logic (`cost_estimator`, `clause_generator`,
-`recommendation_engine`) without requiring a live database.
+The tests cover recommendation logic, clause generation, and cost estimation without requiring a live browser.
 
-## API surface
+## API Surface
 
-| Page (PRD)                     | Endpoints                                                                 |
-|---------------------------------|----------------------------------------------------------------------------|
-| Auth                             | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me` |
-| Dashboard                        | `GET /api/v1/dashboard`                                                   |
-| Seat Allocation                  | `POST /api/v1/seat-allocation/upload-contract`, `POST /api/v1/seat-allocation/analyze`, `GET /api/v1/seat-allocation/{id}` |
-| Live Rule Tracking & Components  | `GET /api/v1/rules`, `GET /api/v1/rules/sources`                          |
-| Clause Generation                | `POST /api/v1/clauses/generate`, `GET /api/v1/clauses/{id}`, `GET /api/v1/clauses` |
-| Cost and Duration Estimate       | `POST /api/v1/cost-estimate/calculate`                                    |
-| (supporting)                     | `GET /api/v1/seats`, `GET /api/v1/institutions`                           |
+| Area | Endpoints |
+| --- | --- |
+| Auth | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me` |
+| Dashboard | `GET /api/v1/dashboard` |
+| Seat Allocation | `POST /api/v1/seat-allocation/upload-contract`, `POST /api/v1/seat-allocation/analyze`, `GET /api/v1/seat-allocation/{id}` |
+| Rules | `GET /api/v1/rules`, `GET /api/v1/rules/sources` |
+| Clauses | `POST /api/v1/clauses/generate`, `GET /api/v1/clauses`, `GET /api/v1/clauses/{id}` |
+| Cost Estimate | `POST /api/v1/cost-estimate/calculate` |
+| Reference Data | `GET /api/v1/seats`, `GET /api/v1/institutions` |
 
-All "analyze"/"generate"/"calculate" endpoints work for guests (no auth
-header) as well as authenticated users — matching the PRD's guest vs.
-authenticated dashboard split. When authenticated, results are attributed
-to the user and surfaced back on `GET /api/v1/dashboard`.
+Most demo endpoints work without authentication. If a user is authenticated, generated records are associated with that user.
